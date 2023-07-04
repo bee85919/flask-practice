@@ -1,7 +1,5 @@
-from flask import Flask     # Flask 패키지에서 Flask 클래스를 import하여 사용할 수 있게 함
-import random               # random 모듈을 import하여 사용할 수 있게 함
+from flask import Flask
 
-# Flask 클래스의 인스턴스 생성
 app = Flask(__name__)
 
 # 아래 코드는 복수의 데이터를 파이썬의 데이터로 전환
@@ -13,38 +11,50 @@ topics = [
     {'id': 3, 'title': 'javascript', 'body': 'javascript is ...'}
 ]
 
-# '/' 경로에 대한 함수 등록
-@app.route('/')
-def index():
-    # HTML 코드를 동적으로 생성하고 있는 모습
-    # 토픽 리스트에서 <li> 태그 문자열을 생성
-    liTags = ''
-    for topic in topics:
-        liTags = liTags + f'<li><a href="/read/{topic["id"]}/">{topic["title"]}</a></li>'
-    # 페이지 본문 문자열 반환
+# HTML 템플릿 생성 함수
+def template(contents, content):
     return f'''<!doctype html>
     <html>
         <body>
             <h1><a href="/">WEB</a></h1>
             <ol>
-                {liTags}
+                {contents}
             </ol>
-            <h2>Welcome</h2>
-            Hello, Web
+            {content}
         </body>
     </html>
     '''
 
-# '/create/' 경로에 대한 함수 등록
+# 토픽 리스트 HTML 생성 함수 # dynamic
+def getContents():
+    liTags = ''
+    for topic in topics:
+        liTags = liTags + f'<li><a href="/read/{topic["id"]}/">{topic["title"]}</a></li>'
+    return liTags
+
+# 메인 페이지 라우팅 
+@app.route('/')
+def index():
+    return template(getContents(), '<h2>Welcome</h2>Hello, WEB')
+
+# 독립된 페이지 라우팅 
+@app.route('/read/<int:id>/')
+def read(id):
+    # 토픽 제목과 내용을 찾기 위해 리스트를 순회
+    title = ''
+    body = ''
+    for topic in topics:
+        if id == topic['id']:
+            title = topic['title']
+            body = topic['body']
+            break
+    # 작성된 제목과 내용을 템플릿에 적용
+    return template(getContents(), f'<h2>{title}</h2>{body}')
+
+# 새 페이지 생성 라우팅 
 @app.route('/create/')
 def create():
     return 'Create'
-
-# '/read/<id>/' 경로에 대한 함수 등록
-@app.route('/read/<id>/')
-def read(id):
-    print(id)
-    return 'Read '+str(id)
 
 # Flask 애플리케이션 실행
 app.run(debug=True)
