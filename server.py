@@ -3,6 +3,15 @@ from flask import Flask, request, redirect
 app = Flask(__name__)
  
  
+nextId = 4
+
+'''
+- 복수의 데이터를 파이썬의 데이터로 전환했다
+    - 동급의 데이터(각각의 글들)은 리스트로 표현
+    - 데이터의 속성(id,title,body)은 딕셔너리로 표현
+    = list + dict 
+    / dict in list
+'''
 topics = [
     {'id': 1, 'title': 'html', 'body': 'html is ...'},
     {'id': 2, 'title': 'css', 'body': 'css is ...'},
@@ -10,7 +19,12 @@ topics = [
 ]
  
  
-def template(contents, content):
+def template(contents, content, id=None):
+    contextUI = ''
+    if id != None:
+        contextUI = f'''
+            <li><a href="/update/{id}/">update</a></li>
+        '''
     return f'''<!doctype html>
     <html>
         <body>
@@ -21,6 +35,7 @@ def template(contents, content):
             {content}
             <ul>
                 <li><a href="/create/">create</a></li>
+                {contextUI}
             </ul>
         </body>
     </html>
@@ -48,12 +63,14 @@ def read(id):
             title = topic['title']
             body = topic['body']
             break
-    return template(getContents(), f'<h2>{title}</h2>{body}')
+    return template(getContents(), f'<h2>{title}</h2>{body}', id)
  
 
+'''
+- GET: browser가 정보를 가져올 때 사용
+- POST: browser가 정보를 변경할 때 사용
+''' 
 @app.route('/create/', methods=['GET', 'POST'])
-# - GET: browser가 정보를 가져올 때 사용
-# - POST: browser가 정보를 변경할 때 사용
 def create():
     if request.method == 'GET':
         '''
@@ -69,7 +86,7 @@ def create():
             → form의 action 
             → method 
             → 전송
-        '''
+        ''' 
         content = '''
             <form action="/create/" method="POST">
                 <p><input type="text" name="title" placeholder="title"></p>
@@ -78,7 +95,6 @@ def create():
             </form>
         '''
         return template(getContents(), content)
-    
     elif request.method == 'POST':
         '''
         1. POST: http 통신의 body를 통해 전송
@@ -100,6 +116,41 @@ def create():
         url = '/read/'+str(nextId)+'/'
         nextId = nextId + 1
         return redirect(url)
+    
  
+# update를 추가했다. 
+@app.route('/update/<int:id>/', methods=['GET', 'POST'])
+def update(id):
+    if request.method == 'GET': 
+        title = ''
+        body = ''
+        for topic in topics:
+            if id == topic['id']:
+                title = topic['title']
+                body = topic['body']
+                break
+        content = f'''
+            <form action="/update/{id}/" method="POST">
+                <p><input type="text" name="title" placeholder="title" value="{title}"></p>
+                <p><textarea name="body" placeholder="body">{body}</textarea></p>
+                <p><input type="submit" value="update"></p>
+            </form>
+        '''
+        return template(getContents(), content)
+    
+    elif request.method == 'POST':
+
+        global nextId
+        title,body = request.form['title'],request.form['body']
+
+        for topic in topics:
+            if id == topic['id']:
+                topic['title'] = title
+                topic['body'] = body
+                break
+        
+        url = '/read/'+str(id)+'/'
+        return redirect(url)
+    
  
 app.run(debug=True)
