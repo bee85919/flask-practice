@@ -24,6 +24,7 @@ def template(contents, content, id=None):
     if id != None:
         contextUI = f'''
             <li><a href="/update/{id}/">update</a></li>
+            <li><form action="/delete/{id}/" method="POST"><input type="submit" value="delete"></form></li>
         '''
     return f'''<!doctype html>
     <html>
@@ -65,8 +66,8 @@ def read(id):
             break
     return template(getContents(), f'<h2>{title}</h2>{body}', id)
  
-
-'''
+ 
+ '''
 - GET: browser가 정보를 가져올 때 사용
 - POST: browser가 정보를 변경할 때 사용
 ''' 
@@ -95,6 +96,7 @@ def create():
             </form>
         '''
         return template(getContents(), content)
+    
     elif request.method == 'POST':
         '''
         1. POST: http 통신의 body를 통해 전송
@@ -110,17 +112,17 @@ def create():
 
         title,body = request.form['title'], request.form['body']
 
-        newTopic = {'id': nextId, 'title': title, 'body': body}
+        newTopic = {'id': nextId, 'title': title, 'body': body}        
         topics.append(newTopic)
 
         url = '/read/'+str(nextId)+'/'
         nextId = nextId + 1
         return redirect(url)
-    
  
-# update를 추가했다. 
+ 
 @app.route('/update/<int:id>/', methods=['GET', 'POST'])
 def update(id):
+
     if request.method == 'GET': 
         title = ''
         body = ''
@@ -141,6 +143,7 @@ def update(id):
     elif request.method == 'POST':
 
         global nextId
+
         title,body = request.form['title'],request.form['body']
 
         for topic in topics:
@@ -148,9 +151,18 @@ def update(id):
                 topic['title'] = title
                 topic['body'] = body
                 break
-        
+
         url = '/read/'+str(id)+'/'
         return redirect(url)
-    
+ 
+ 
+@app.route('/delete/<int:id>/', methods=['POST'])
+def delete(id):
+    for topic in topics:
+        if id == topic['id']: # 해당 id의 topic을 삭제
+            topics.remove(topic)
+            break
+    return redirect('/')
+ 
  
 app.run(debug=True)
